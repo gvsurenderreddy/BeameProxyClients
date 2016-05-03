@@ -4,11 +4,26 @@
 
 'use strict';
 
+
+
+/**
+ * @typedef {Object} SecureServerConfig
+ * @property {String} EndpointUid
+ * @property {String} ProxyHostName
+ * @property {String} Endpoint
+ * @property {Number} DefaultPort
+ */
+
+
 var https = require('https');
 var _ = require('underscore');
 var SocketIO = require('socket.io');
 
 var serverConfigJsonPath = './config/SecureServerConfig.json';
+
+/**
+ * @type {SecureServerConfig}
+ */
 var serverConfig = require('../config/SecureServerConfig.json');
 
 var utils = require('beame-utils').Utils;
@@ -271,12 +286,13 @@ function SecureServer(clientServerPort){
 //****************************Public services START****************************************//
 /**
  * Return state of Server
- * @returns {boolean}
+ * @returns {Boolean}
  */
 SecureServer.prototype.isReady = function () {
     return this.state === 'ready';
 };
 
+//noinspection JSUnusedGlobalSymbols
 /**
  * START SEVER METHOD
  * expecting existing certificates at this point
