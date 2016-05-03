@@ -2,7 +2,26 @@
  * Created by vaney on 03/05/2016.
  */
 
+var _ = require('underscore');
+var net = require('net');
+var uuid = require('node-uuid');
+var io = require('socket.io-client');
+
+var ProxyUtils = require('beame-utils').ProxyUtils;
+var proxyUtils = new ProxyUtils();
+
 /**
+ * @typedef {Object} ProxyClientOptions
+ * @property {Function} [onConnect]
+ * @property {Function} [onLocalServerCreated]
+ */
+
+/**
+ * @param {String} hostname
+ * @param {String} endpoint
+ * @param {String} targetHost
+ * @param {String} targetPort
+ * @param {ProxyClientOptions} options
  * @constructor
  */
 function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
@@ -15,7 +34,9 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
 
     console.info("ProxyClient connecting to " + this.endpoint);
 
-    //*******************************************************connect to SslProxyServer
+    /**
+     * Connect to ProxyServer
+     */
     this.socketio = io.connect(this.endpoint +'/control', {'force new connection': true});
 
     this.socketio.on('connect',  _.bind(function () {
@@ -24,7 +45,7 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
         }
         console.info("ProxyClient connected:{hostname, endpoint, targetHost, targetPort}", this.hostname, this.endpoint, this.targetHost, this.targetPort);
         this.connected = true;
-        proxyUtils.emitMessage('register_server', {hostname: this.hostname});
+        proxyUtils.emitMessage(this.socketio, 'register_server', proxyUtils.formatMessage(null, {hostname: this.hostname}));
 
         options && options.onConnect && options.onConnect();
 
@@ -39,8 +60,7 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
     }, this));
 
 
-    this.socketio.on('data', _.bind(function(data){
-        console.log('**********Client Proxy on socketio data');
+    this.socketio.on('data', _.bind(function(data) {
         var socketId = data.socketId;
         var socket = this.clientSockets[socketId];
         if(socket) {
@@ -83,7 +103,9 @@ ProxyClient.prototype.createLocalServerConnection = function (data, callback) {
     this.clientSockets[serverSideSocketId] = client;
 
     try {
-        //********************************************connect to local server
+        /**
+         * Connect to local server
+         */
         client.connect(this.targetPort, this.targetHost, _.bind(function () {
 
             client.on('data', _.bind(function (data) {
@@ -108,7 +130,7 @@ ProxyClient.prototype.createLocalServerConnection = function (data, callback) {
             console.log("Socket Error in ProxyClient " + data);
 
             if (this.socketio) {
-                proxyUtils.emitMessage(this.socketio, '_error', proxyUtils.formatMessage(client.serverSideSocketId, error));
+                proxyUtils.emitMessage(this.socketio, '_error', proxyUtils.formatMessage(client.serverSideSocketId, null, error));
             }
         }, this));
 

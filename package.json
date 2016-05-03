@@ -1,5 +1,5 @@
 {
-  "name": "proxyclients",
+  "name": "beame-proxy-clients",
   "version": "1.0.0",
   "description": "Collection of ProxyClients for Node.js",
   "main": "index.js",
@@ -8,12 +8,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/beameio/ProxyClients.git"
+    "url": "git+ssh://github.com/beameio/ProxyClients.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/beameio/ProxyClients/issues"
   },
-  "homepage": "https://github.com/beameio/ProxyClients#readme"
+  "homepage": "https://github.com/beameio/ProxyClients#readme",
+  "dependencies": {
+    "beame-utils": "git+ssh://git@github.com:beameio/BeameUtils.git",
+    "node-uuid": "^1.4.7",
+    "socket.io": "^1.4.6",
+    "socket.io-client": "^1.4.6",
+    "underscore": "^1.8.3"
+  }
 }
