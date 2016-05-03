@@ -4,5 +4,5 @@
 
 
 module.exports = {
-    HTTPProxyClient: require('./src/HTTPProxyClient')
+    ProxyClient: require('./src/ProxyClient')
 };
