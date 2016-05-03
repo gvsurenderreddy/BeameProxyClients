@@ -1,0 +1,19 @@
+{
+  "name": "proxyclients",
+  "version": "1.0.0",
+  "description": "Collection of ProxyClients for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beameio/ProxyClients.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/beameio/ProxyClients/issues"
+  },
+  "homepage": "https://github.com/beameio/ProxyClients#readme"
+}
