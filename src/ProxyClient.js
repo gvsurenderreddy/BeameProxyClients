@@ -20,16 +20,29 @@ var proxyUtils = new ProxyUtils();
  * @param {String} hostname
  * @param {String} endpoint
  * @param {String} targetHost
- * @param {String} targetPort
+ * @param {Number} targetPort
  * @param {ProxyClientOptions} options
  * @constructor
+ * @class
  */
 function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
+
+    /** @member {Boolean} */
     this.connected = false;
-    this.clientSockets = [];
+
+    /** @member {Object} */
+    this.clientSockets = {};
+
+    /** @member {String} */
     this.endpoint = endpoint;
+
+    /** @member {String} */
     this.hostname = hostname;
+
+    /** @member {String} */
     this.targetHost = targetHost;
+
+    /** @member {Number} */
     this.targetPort = targetPort;
 
     console.info("ProxyClient connecting to " + this.endpoint);
