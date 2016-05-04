@@ -91,7 +91,11 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
     }, this));
 
     this.socketio.on('_end', _.bind(function(data) {
-        console.log("***************Killing the socket " + data);
+        console.log("***************Killing the socket ");
+        if(!data || !data.socketId) {
+            return;
+        }
+
         this.deleteSocket(data.socketId);
     }, this));
 
