@@ -15,7 +15,6 @@
 
 var https = require('https');
 var _ = require('underscore');
-var SocketIO = require('socket.io');
 
 var serverConfigJsonPath = './config/SecureServerConfig.json';
 
@@ -114,22 +113,6 @@ var start = function(certs, callback){
             }
         });
 
-        /**
-         * {}
-         */
-        var io = SocketIO(this.clientServer, null);
-        //noinspection JSUnresolvedFunction
-        io.of('control').on('connection', function (socketio_socket) {
-            console.log("Client Server Socket.io connected ");
-
-            //test messages
-            //TODO to be removed
-            socketio_socket.on('nehuj', _.bind(function (data) {
-                console.log('client server on nehuy received ',data);
-                socketio_socket.emit('pohuy', {name: 'sam ahuel'});
-            }));
-        });
-
         this.clientServer.listen(this.clientServerPort, _.bind(function() {
             this.sslProxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
         },this));
@@ -215,7 +198,7 @@ var onEndpointReceived = function(error,provEndpoint){
     //update properties and save it to config json
     updateConfigData(provEndpoint,_.bind(function(error) {
         if(error) {
-            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on ClIENT SERVER',utils.stringify(error));
+            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER',utils.stringify(error));
             return;
         }
         //create certificate for received endpoint
@@ -269,7 +252,7 @@ function SecureServer(clientServerPort){
                     this.host = data.endpoint;
                 }
                 else {
-                    console.log('!!!!!!!!!! Load Balancer: Instance not found');
+                    console.log('!!!!!!!!!! Load Balance: Instance not found');
                 }
 
                 console.log('call provision for available endpoint');
