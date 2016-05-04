@@ -24,7 +24,6 @@ var serverConfigJsonPath = './config/SecureServerConfig.json';
 var serverConfig = require('../config/SecureServerConfig.json');
 
 var ProxyUtils = require('beame-utils').ProxyUtils;
-var proxyUtils = new ProxyUtils();
 var utils = require('beame-utils').Utils;
 
 
@@ -73,7 +72,7 @@ var updateConfigData = function (provEndpoint,callback) {
         return;
     }
 
-    serverConfig.ProxyHostName          = provEndpoint.hostname;
+    serverConfig.ProxyHostName          = 'https://' + provEndpoint.hostname;
     serverConfig.Endpoint               = provEndpoint.endpoint;
     serverConfig.EndpointUid            = provEndpoint.uid;
 
@@ -213,56 +212,68 @@ var onEndpointReceived = function(error,provEndpoint){
 //**********************************CONSTRUCTOR************************************************//
 /**
  * @param {Number} clientServerPort
+ * @param {ProxyUtilsSettings} settings
  * @constructor
  */
-function SecureServer(clientServerPort){
+function SecureServer(clientServerPort, settings) {
+    var self = this;
+
     console.log('Enter to Client Server constructor');
 
-    proxyUtils.getInstanceData(_.bind(function(data){
+    self.proxyUtils = new ProxyUtils(settings, function (instanceData) {
         //set properties
-        this.config                 = proxyUtils.config;
-        this.availabilityZone       = data.avlZone;
-        this.state                  = 'init';
+        self.config                 = self.proxyUtils.config;
+        self.availabilityZone       = (settings && settings.avlZone) || instanceData.avlZone;
+        self.state                  = 'init';
 
-        if(clientServerPort && clientServerPort != serverConfig.DefaultPort) {
+        if(clientServerPort && clientServerPort != serverConfig.DefaultPort){
             serverConfig.DefaultPort = clientServerPort;
             updateConfigFile(null);
         }
 
-        this.clientServerPort = serverConfig.DefaultPort;
+        self.clientServerPort = serverConfig.DefaultPort;
 
         //init services
-        certificateServices = proxyUtils.getCertificateServiceInstance();
-        provisionApiServices = proxyUtils.getProvisionApiServiceInstance();
+        certificateServices = self.proxyUtils.getCertificateServiceInstance();
+        provisionApiServices = self.proxyUtils.getProvisionApiServiceInstance();
 
-        //check existing configuration
-        if (!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
-
-            //*****************************************try read installed certificates**************************//
-            readCertificates.call(this, _.bind(function(error){
-                if(error) {
-                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!on read certificates',error);
-                }
-            },this));
-        } else {
+        var init = function(){
             //*****************************************get available endpoint from provision**************************//
-            this.host = null;
-            utils.httpGet(this.config.LoadBalanceEndpoint,_.bind(function (error,data) {
-                if (data && data.endpoint) {
-                    this.host = data.endpoint;
+            self.host = null;
+            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint,function (error,data) {
+                if(data && data.endpoint){
+                    self.host = data.endpoint;
+                    self.availabilityZone = data.zone;
+
+                    provisionApiServices.findEndpoint(self.host, self.availabilityZone, _.bind(onEndpointReceived,self));
                 }
                 else {
-                    console.log('!!!!!!!!!! Load Balance: Instance not found');
+                    console.log('!!!!!!!!!! Load Balancer: Instance not found');
                 }
+            });
+        };
 
-                console.log('call provision for available endpoint');
-                provisionApiServices.findEndpoint(this.host, this.availabilityZone, _.bind(onEndpointReceived,this));
-            },this));
+        //check existing configuration
+        if(!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
+
+            //*****************************************try read installed certificates**************************//
+            readCertificates.call(self, function(error) {
+                if(error) {
+                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!on read certificates',error);
+                    init();
+                }
+            });
+        }
+        else {
+            init();
         }
 
-    },this));
 
-    return this;
+
+    });
+
+
+    return self;
 }
 
 
@@ -284,15 +295,22 @@ SecureServer.prototype.isReady = function () {
  */
 SecureServer.prototype.startServer = function(callback) {
 
-    readCertificates.call(this, _.bind(function(error,options) {
-        if(error){
-            this.state = 'error';
-            console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start',utils.stringify(error));
-            return;
-        }
-        start.call(this, options, callback);
-    },this));
+    var self = this;
 
+    var interval = setInterval(function(){
+        if(self.isReady()){
+            readCertificates.call(self, function(error,options) {
+                if(error){
+                    self.state = 'error';
+                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start',utils.stringify(error));
+                    return;
+                }
+
+                start.call(self, options, callback);
+            });
+            clearInterval(interval);
+        }
+    }, 100);
 };
 
 /**
