@@ -24,35 +24,25 @@ var serverConfigJsonPath = './config/ServerConfig.json';
 var serverConfig = require('../config/ServerConfig.json');
 
 var ProxyUtils = require('beame-utils').ProxyUtils;
-var proxyUtils = new ProxyUtils();
 var utils = require('beame-utils').Utils;
 
 
 var ProxyClient = require('./ProxyClient');
 
-var certificateServices,
-    provisionApiServices;
 
 //****************************Private helpers START****************************************//
 
 /**
  * Update config file
- * @param provEndpoint
+ * @this {Server}
  * @param callback
  * @this {Server}
  */
-var updateConfigData = function (provEndpoint,callback) {
+var updateConfigData = function (callback) {
 
-    if(!provEndpoint){
-        console.error('!!!!!!!!!!!!!!!!Empty Endpoint received from API');
-        callback && callback('Empty Endpoint received from API', null);
-        return;
-    }
-
-    serverConfig.ProxyHostName          = provEndpoint.hostname;
-    serverConfig.Endpoint               = provEndpoint.endpoint;
-    serverConfig.EndpointUid            = provEndpoint.uid;
-
+    serverConfig.ProxyHostName          = this.host;
+    serverConfig.Endpoint               = this.endpoint;
+ 
     updateConfigFile(callback);
 };
 
@@ -101,82 +91,74 @@ var start = function(callback){
 };
 //****************************Private helpers END****************************************//
 
-//****************************Private event handlers START****************************************//
-
-/**
- * Response callback handler on request for endpoint from provision API
- * @param error
- * @param provEndpoint
- * @this {Server}
- */
-var onEndpointReceived = function(error, provEndpoint) {
-
-    if(error){
-        console.error('on find endpoint error',utils.stringify(error));
-        return;
-    }
-
-    console.log('on find endpoint',provEndpoint);
-
-    //update properties and save it to config json
-    updateConfigData(provEndpoint,_.bind(function(error) {
-        if(error) {
-            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER',utils.stringify(error));
-        }
-    },this));
-};
-
-//****************************Private event handlers END****************************************//
-
 
 //**********************************CONSTRUCTOR************************************************//
 /**
  * @param {Number} clientServerPort
+ * @param {ProxyUtilsSettings} settings
  * @constructor
  */
-function Server(clientServerPort){
-    console.log('Enter to Client Server constructor');
-
-    proxyUtils.getInstanceData(_.bind(function(data){
+function Server(clientServerPort, settings) {
+    var self = this;
+  
+    self.proxyUtils = new ProxyUtils(settings, function () {
         //set properties
-        this.config                 = proxyUtils.config;
-        this.availabilityZone       = data.avlZone;
-        this.state                  = 'init';
+        self.config                 = self.proxyUtils.config;
+        self.state                  = 'init';
 
         if(clientServerPort && clientServerPort != serverConfig.DefaultPort) {
             serverConfig.DefaultPort = clientServerPort;
             updateConfigFile(null);
         }
 
-        this.clientServerPort = serverConfig.DefaultPort;
+        self.clientServerPort = serverConfig.DefaultPort;
 
-        //init services
-        certificateServices = proxyUtils.getCertificateServiceInstance();
-        provisionApiServices = proxyUtils.getProvisionApiServiceInstance();
-
+    
         //check existing configuration
         if (!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
-
-            this.state = 'ready';
-        } else {
+            self.state = 'ready';
+        } 
+        else {
             //*****************************************get available endpoint from provision**************************//
-            this.host = null;
-            utils.httpGet(this.config.LoadBalanceEndpoint, _.bind(function (error,data) {
-                if (data && data.endpoint) {
-                    this.host = data.endpoint;
+            self.host = null;
+            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint,function (error,data) {
+                if(data && data.endpoint){
+                    self.host = data.endpoint;
+                    
+                    
+                    self.proxyUtils.makeHostnameForLocalIP(function(error,endpoint) {
+                        if(error){
+                            console.error("on get local hostname error",utils.stringify(error));
+                            return;
+                        }
+                        
+                        if(!endpoint){
+                            console.error("on get local hostname error: endpoint empty");
+                            return;
+                        }
+                        
+                        self.endpoint = endpoint;
+                        
+                        updateConfigData.call(self,function(error){
+                            if(error) {
+                                console.error("on update config error", utils.stringify(error));
+                                return;
+                            }
+
+                            self.state = 'ready';
+                        });
+                    });
+                    
                 }
                 else {
-                    console.log('!!!!!!!!!! Load Balance: Instance not found');
+                    console.log('!!!!!!!!!! Load Balancer: Instance not found');
                 }
-
-                console.log('call provision for available endpoint');
-                provisionApiServices.findEndpoint(this.host, this.availabilityZone, _.bind(onEndpointReceived,this));
-            },this));
+            });
         }
 
-    },this));
+    });
 
-    return this;
+    return self;
 }
 
 
@@ -198,7 +180,16 @@ Server.prototype.isReady = function () {
  */
 Server.prototype.startServer = function(callback) {
 
-    start.call(this, callback);
+    var self = this;
+
+    var interval = setInterval(function(){
+        if(self.isReady()) {
+            start.call(this, callback);
+            clearInterval(interval);
+        }
+    }, 100);
+    
+    
 };
 
 /**
