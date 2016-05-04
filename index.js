@@ -4,5 +4,6 @@
 
 
 module.exports = {
-    ProxyClient: require('./src/ProxyClient')
+    SecureServer: require('./src/SecureServer'),
+    Server: require('./src/Server')
 };

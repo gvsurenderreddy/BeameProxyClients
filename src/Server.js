@@ -1,11 +1,11 @@
 /**
- * Created by vaney on 03/05/2016.
+ * Created by vaney on 04/05/2016.
  */
 
 'use strict';
 
 /**
- * @typedef {Object} SecureServerConfig
+ * @typedef {Object} ServerConfig
  * @property {String} EndpointUid
  * @property {String} ProxyHostName
  * @property {String} Endpoint
@@ -13,16 +13,15 @@
  */
 
 
-var https = require('https');
+var http = require('http');
 var _ = require('underscore');
-var SocketIO = require('socket.io');
 
-var serverConfigJsonPath = './config/SecureServerConfig.json';
+var serverConfigJsonPath = './config/ServerConfig.json';
 
 /**
- * @type {SecureServerConfig}
+ * @type {ServerConfig}
  */
-var serverConfig = require('../config/SecureServerConfig.json');
+var serverConfig = require('../config/ServerConfig.json');
 
 var ProxyUtils = require('beame-utils').ProxyUtils;
 var proxyUtils = new ProxyUtils();
@@ -37,34 +36,10 @@ var certificateServices,
 //****************************Private helpers START****************************************//
 
 /**
- * Read certificates from server
- * SERVER STATE CHANGED TO READY on success
- * @param callback
- * @this {SecureServer}
- */
-var readCertificates = function(callback) {
-    certificateServices.readCertificates(serverConfig.Endpoint,_.bind(function(error,data) {
-        if(error){
-            console.error('read server Certificates',utils.stringify(error));
-            callback(error,null);
-            return;
-        }
-
-        if(data){
-            console.log('************************************************certificates read successfully');
-            this.state = 'ready';
-            callback(null,data);
-        }
-
-
-    },this));
-};
-
-/**
  * Update config file
  * @param provEndpoint
  * @param callback
- * @this {SecureServer}
+ * @this {Server}
  */
 var updateConfigData = function (provEndpoint,callback) {
 
@@ -84,7 +59,7 @@ var updateConfigData = function (provEndpoint,callback) {
 /**
  * Save ClientServerConfig.json to disk
  * @param {Function} callback
- * @this {SecureServer}
+ * @this {Server}
  */
 var updateConfigFile = function (callback) {
     utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig),function (error) {
@@ -98,14 +73,13 @@ var updateConfigFile = function (callback) {
 /**
  * START SEVER FROM HERE
  * certs => certificates options
- * @param {Object} certs
  * @param {Function} callback
- * @this {SecureServer}
+ * @this {Server}
  */
-var start = function(certs, callback){
+var start = function(callback){
     console.log('------------------------Client Server starting on ',serverConfig.Endpoint, serverConfig.DefaultPort);
     try{
-        this.clientServer = https.createServer(certs, function (req, res) {
+        this.clientServer = http.createServer(function (req, res) {
             console.log("Client Server on connect", req.headers);
             if (req.url.indexOf('index.html') >= 0) {
                 console.log('Server on request');
@@ -114,24 +88,8 @@ var start = function(certs, callback){
             }
         });
 
-        /**
-         * {}
-         */
-        var io = SocketIO(this.clientServer, null);
-        //noinspection JSUnresolvedFunction
-        io.of('control').on('connection', function (socketio_socket) {
-            console.log("Client Server Socket.io connected ");
-
-            //test messages
-            //TODO to be removed
-            socketio_socket.on('nehuj', _.bind(function (data) {
-                console.log('client server on nehuy received ',data);
-                socketio_socket.emit('pohuy', {name: 'sam ahuel'});
-            }));
-        });
-
         this.clientServer.listen(this.clientServerPort, _.bind(function() {
-            this.sslProxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
+            this.proxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
         },this));
 
         callback  && callback(null, this.clientServer);
@@ -146,82 +104,26 @@ var start = function(certs, callback){
 //****************************Private event handlers START****************************************//
 
 /**
- * Response callback handler on saving Ssl Certificates
- * SERVER STATE CHANGED TO READY
- * @param error
- * @param data
- * @this {SecureServer}
- */
-var onCertificatesSaved = function(error,data) {
-    if (data) {
-        console.log('************************************************certificates saved successfully');
-        this.state = 'ready';
-        return;
-    }
-    console.error('save certificates failed',error);
-};
-
-/**
- * Response callback handler on request for Ssl certificates from provision API
- * @param error
- * @param provEndpoint
- * @this {SecureServer}
- */
-var onCertificateReceived = function(error,provEndpoint) {
-    if (error) {
-        console.error('on order pem error',utils.stringify(error));
-        return;
-    }
-    //save received certificates
-    certificateServices.saveCertificates(provEndpoint.endpoint,provEndpoint.options,_.bind(onCertificatesSaved,this));
-};
-
-/**
- * Response callback handler on request to CertificateServices for CSR
- * @param error
- * @param data
- * @this {SecureServer}
- */
-var onCsrCreated = function(error,data) {
-    if (error) {
-        console.error('CSR creation error',error);
-        return;
-    }
-
-    if (!data) {
-        console.error('CSR data is empty');
-        return;
-    }
-
-    //order ssl certificate from provision
-    provisionApiServices.orderPem(data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived,this));
-};
-
-/**
  * Response callback handler on request for endpoint from provision API
  * @param error
  * @param provEndpoint
- * @this {SecureServer}
+ * @this {Server}
  */
-var onEndpointReceived = function(error,provEndpoint){
-
-    console.log('on find endpoint',provEndpoint);
+var onEndpointReceived = function(error, provEndpoint) {
 
     if(error){
         console.error('on find endpoint error',utils.stringify(error));
         return;
     }
 
+    console.log('on find endpoint',provEndpoint);
+
     //update properties and save it to config json
     updateConfigData(provEndpoint,_.bind(function(error) {
         if(error) {
-            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on ClIENT SERVER',utils.stringify(error));
-            return;
+            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER',utils.stringify(error));
         }
-        //create certificate for received endpoint
-        certificateServices.createCSR(serverConfig.EndpointUid, serverConfig.Endpoint,_.bind(onCsrCreated,this));
     },this));
-
 };
 
 //****************************Private event handlers END****************************************//
@@ -232,7 +134,7 @@ var onEndpointReceived = function(error,provEndpoint){
  * @param {Number} clientServerPort
  * @constructor
  */
-function SecureServer(clientServerPort){
+function Server(clientServerPort){
     console.log('Enter to Client Server constructor');
 
     proxyUtils.getInstanceData(_.bind(function(data){
@@ -255,21 +157,16 @@ function SecureServer(clientServerPort){
         //check existing configuration
         if (!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
 
-            //*****************************************try read installed certificates**************************//
-            readCertificates.call(this, _.bind(function(error){
-                if(error) {
-                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!on read certificates',error);
-                }
-            },this));
+            this.state = 'ready';
         } else {
             //*****************************************get available endpoint from provision**************************//
             this.host = null;
-            utils.httpGet(this.config.LoadBalanceEndpoint,_.bind(function (error,data) {
+            utils.httpGet(this.config.LoadBalanceEndpoint, _.bind(function (error,data) {
                 if (data && data.endpoint) {
                     this.host = data.endpoint;
                 }
                 else {
-                    console.log('!!!!!!!!!! Load Balancer: Instance not found');
+                    console.log('!!!!!!!!!! Load Balance: Instance not found');
                 }
 
                 console.log('call provision for available endpoint');
@@ -288,7 +185,7 @@ function SecureServer(clientServerPort){
  * Return state of Server
  * @returns {Boolean}
  */
-SecureServer.prototype.isReady = function () {
+Server.prototype.isReady = function () {
     return this.state === 'ready';
 };
 
@@ -299,26 +196,18 @@ SecureServer.prototype.isReady = function () {
  * in callback suppose to return created https server
  * @param {Function} callback
  */
-SecureServer.prototype.startServer = function(callback) {
+Server.prototype.startServer = function(callback) {
 
-    readCertificates.call(this, _.bind(function(error,options) {
-        if(error){
-            this.state = 'error';
-            console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start',utils.stringify(error));
-            return;
-        }
-        start.call(this, options, callback);
-    },this));
-
+    start.call(this, callback);
 };
 
 /**
  * destroy server
  */
-SecureServer.prototype.destroy = function(){
+Server.prototype.destroy = function(){
     //destroy proxy
-    this.sslProxyClient && this.sslProxyClient.destroy();
-    this.sslProxyClient = null;
+    this.proxyClient && this.proxyClient.destroy();
+    this.proxyClient = null;
 
     //destroy server
     this.clientServer.close(_.bind(function(){
@@ -328,6 +217,6 @@ SecureServer.prototype.destroy = function(){
 
 //****************************Public services END****************************************//
 /**
- * @type {SecureServer}
+ * @type {Server}
  */
-module.exports = SecureServer;
+module.exports = Server;
