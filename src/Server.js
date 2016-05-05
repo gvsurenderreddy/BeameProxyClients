@@ -40,8 +40,8 @@ var ProxyClient = require('./ProxyClient');
  */
 var updateConfigData = function (callback) {
 
-    serverConfig.ProxyHostName          = 'http://' +  this.host;
-    serverConfig.Endpoint               = this.endpoint;
+    serverConfig.ProxyHostName = 'http://' + this.host;
+    serverConfig.Endpoint = this.endpoint;
 
     updateConfigFile(callback);
 };
@@ -52,11 +52,11 @@ var updateConfigData = function (callback) {
  * @this {Server}
  */
 var updateConfigFile = function (callback) {
-    utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig),function (error) {
-        if(error){
-            callback && callback(error,null);
+    utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig), function (error) {
+        if (error) {
+            callback && callback(error, null);
         }
-        callback && callback(null,{});
+        callback && callback(null, {});
     });
 };
 
@@ -66,9 +66,9 @@ var updateConfigFile = function (callback) {
  * @param {Function} callback
  * @this {Server}
  */
-var start = function(callback){
-    console.log('------------------------Client Server starting on ',serverConfig.Endpoint, serverConfig.DefaultPort);
-    try{
+var start = function (callback) {
+    console.log('------------------------Client Server starting on ', serverConfig.Endpoint, serverConfig.DefaultPort);
+    try {
         this.clientServer = http.createServer(function (req, res) {
             console.log("Client Server on connect", req.headers);
             if (req.url.indexOf('index.html') >= 0) {
@@ -78,14 +78,14 @@ var start = function(callback){
             }
         });
 
-        this.clientServer.listen(this.clientServerPort, _.bind(function() {
+        this.clientServer.listen(this.clientServerPort, _.bind(function () {
             this.proxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
-        },this));
+        }, this));
 
-        callback  && callback(null, this.clientServer);
-    } catch(error) {
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED',utils.stringify(error));
-        callback  && callback(error, null);
+        callback && callback(null, this.clientServer);
+    } catch (error) {
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED', utils.stringify(error));
+        callback && callback(error, null);
     }
 
 };
@@ -103,10 +103,10 @@ function Server(clientServerPort, settings) {
 
     self.proxyUtils = new ProxyUtils(settings, function () {
         //set properties
-        self.config                 = self.proxyUtils.config;
-        self.state                  = 'init';
+        self.config = self.proxyUtils.config;
+        self.state = 'init';
 
-        if(clientServerPort && clientServerPort != serverConfig.DefaultPort) {
+        if (clientServerPort && clientServerPort != serverConfig.DefaultPort) {
             serverConfig.DefaultPort = clientServerPort;
             updateConfigFile(null);
         }
@@ -121,26 +121,26 @@ function Server(clientServerPort, settings) {
         else {
             //*****************************************get available endpoint from provision**************************//
             self.host = null;
-            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint,function (error,data) {
-                if(data && data.endpoint){
+            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint, function (error, data) {
+                if (data && data.endpoint) {
                     self.host = data.endpoint;
 
 
-                    self.proxyUtils.makeHostnameForLocalIP(function(error,endpoint) {
-                        if(error){
-                            console.error("on get local hostname error",utils.stringify(error));
+                    self.proxyUtils.makeHostnameForActiveInstance(data.publicIp, function (error, endpoint) {
+                        if (error) {
+                            console.error("on get local hostname error", utils.stringify(error));
                             return;
                         }
 
-                        if(!endpoint){
+                        if (!endpoint) {
                             console.error("on get local hostname error: endpoint empty");
                             return;
                         }
 
                         self.endpoint = endpoint;
 
-                        updateConfigData.call(self,function(error){
-                            if(error) {
+                        updateConfigData.call(self, function (error) {
+                            if (error) {
                                 console.error("on update config error", utils.stringify(error));
                                 return;
                             }
@@ -178,12 +178,12 @@ Server.prototype.isReady = function () {
  * in callback suppose to return created https server
  * @param {Function} callback
  */
-Server.prototype.startServer = function(callback) {
+Server.prototype.startServer = function (callback) {
 
     var self = this;
 
-    var interval = setInterval(function(){
-        if(self.isReady()) {
+    var interval = setInterval(function () {
+        if (self.isReady()) {
             start.call(this, callback);
             clearInterval(interval);
         }
@@ -195,15 +195,15 @@ Server.prototype.startServer = function(callback) {
 /**
  * destroy server
  */
-Server.prototype.destroy = function(){
+Server.prototype.destroy = function () {
     //destroy proxy
     this.proxyClient && this.proxyClient.destroy();
     this.proxyClient = null;
 
     //destroy server
-    this.clientServer.close(_.bind(function(){
+    this.clientServer.close(_.bind(function () {
         this.clientServer = null;
-    },this));
+    }, this));
 };
 
 //****************************Public services END****************************************//
