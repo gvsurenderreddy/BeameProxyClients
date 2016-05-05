@@ -72,6 +72,11 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
         this.createLocalServerConnection.call(this, data, options && options.onLocalServerCreated);
     }, this));
 
+    this.socketio.on('hostRegistered', _.bind(function (data) {
+        // this.createLocalServerConnection.call(this, data, options && options.onLocalServerCreated);
+        console.log('hostRegistered', data);
+    }, this));
+
 
     this.socketio.on('data', _.bind(function(data) {
         var socketId = data.socketId;
