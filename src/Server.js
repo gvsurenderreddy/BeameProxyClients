@@ -184,7 +184,7 @@ Server.prototype.startServer = function (callback) {
 
     var interval = setInterval(function () {
         if (self.isReady()) {
-            start.call(this, callback);
+            start.call(self, callback);
             clearInterval(interval);
         }
     }, 100);
