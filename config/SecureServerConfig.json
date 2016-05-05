@@ -1,6 +1,6 @@
 {
-  "EndpointUid": "6ae160be-a362-4007-a780-3f0cc012fb71",
-  "ProxyHostName": "https://sslproxy-eu-central-1a-1.luckyqr.io",
-  "Endpoint": "obdxb7592lbsck8e-sslproxy-eu-central-1a-1.luckyqr.io",
+  "EndpointUid": "",
+  "ProxyHostName": "",
+  "Endpoint": "",
   "DefaultPort": 8888
 }

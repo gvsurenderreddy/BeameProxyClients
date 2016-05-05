@@ -40,9 +40,9 @@ var ProxyClient = require('./ProxyClient');
  */
 var updateConfigData = function (callback) {
 
-    serverConfig.ProxyHostName          = this.host;
+    serverConfig.ProxyHostName          = 'http://' +  this.host;
     serverConfig.Endpoint               = this.endpoint;
- 
+
     updateConfigFile(callback);
 };
 
@@ -74,7 +74,7 @@ var start = function(callback){
             if (req.url.indexOf('index.html') >= 0) {
                 console.log('Server on request');
                 res.writeHead(200, {'Content-Type': 'text/plain'});
-                res.end('host okay source ip' + req.connection.remoteAddress + " port " + req.connection.remotePort);
+                res.end('host okay source ip ' + req.connection.remoteAddress + " port " + req.connection.remotePort);
             }
         });
 
@@ -100,7 +100,7 @@ var start = function(callback){
  */
 function Server(clientServerPort, settings) {
     var self = this;
-  
+
     self.proxyUtils = new ProxyUtils(settings, function () {
         //set properties
         self.config                 = self.proxyUtils.config;
@@ -113,32 +113,32 @@ function Server(clientServerPort, settings) {
 
         self.clientServerPort = serverConfig.DefaultPort;
 
-    
+
         //check existing configuration
         if (!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
             self.state = 'ready';
-        } 
+        }
         else {
             //*****************************************get available endpoint from provision**************************//
             self.host = null;
             self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint,function (error,data) {
                 if(data && data.endpoint){
                     self.host = data.endpoint;
-                    
-                    
+
+
                     self.proxyUtils.makeHostnameForLocalIP(function(error,endpoint) {
                         if(error){
                             console.error("on get local hostname error",utils.stringify(error));
                             return;
                         }
-                        
+
                         if(!endpoint){
                             console.error("on get local hostname error: endpoint empty");
                             return;
                         }
-                        
+
                         self.endpoint = endpoint;
-                        
+
                         updateConfigData.call(self,function(error){
                             if(error) {
                                 console.error("on update config error", utils.stringify(error));
@@ -148,7 +148,7 @@ function Server(clientServerPort, settings) {
                             self.state = 'ready';
                         });
                     });
-                    
+
                 }
                 else {
                     console.log('!!!!!!!!!! Load Balancer: Instance not found');
@@ -188,8 +188,8 @@ Server.prototype.startServer = function(callback) {
             clearInterval(interval);
         }
     }, 100);
-    
-    
+
+
 };
 
 /**
