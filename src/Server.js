@@ -129,11 +129,13 @@ function Server(clientServerPort, settings) {
                     self.proxyUtils.makeHostnameForActiveInstance(data.publicIp, function (error, endpoint) {
                         if (error) {
                             console.error("on get local hostname error", utils.stringify(error));
+                            self.state = 'failed';
                             return;
                         }
 
                         if (!endpoint) {
                             console.error("on get local hostname error: endpoint empty");
+                            self.state = 'failed';
                             return;
                         }
 
@@ -142,6 +144,7 @@ function Server(clientServerPort, settings) {
                         updateConfigData.call(self, function (error) {
                             if (error) {
                                 console.error("on update config error", utils.stringify(error));
+                                self.state = 'failed';
                                 return;
                             }
 
@@ -152,6 +155,7 @@ function Server(clientServerPort, settings) {
                 }
                 else {
                     console.log('!!!!!!!!!! Load Balancer: Instance not found');
+                    self.state = 'failed';
                 }
             });
         }
@@ -183,9 +187,19 @@ Server.prototype.startServer = function (callback) {
     var self = this;
 
     var interval = setInterval(function () {
-        if (self.isReady()) {
-            start.call(self, callback);
+        if (self.state == 'failed') {
             clearInterval(interval);
+
+            callback && callback(new Error('Failed to start client server'), null);
+            return;
+        }
+
+        if (self.isReady()) {
+            start.call(self, function (error, clientServer) {
+                clearInterval(interval);
+
+                callback && callback(error, clientServer);
+            });
         }
     }, 100);
 
