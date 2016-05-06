@@ -17,7 +17,7 @@ var http = require('http');
 var _ = require('underscore');
 var pathModule = require('path');
 
-var serverConfigJsonPath = pathModule.resolve('./config/ServerConfig.json');
+var serverConfigJsonPath = pathModule.resolve(__dirname + '/../config/ServerConfig.json');
 
 /**
  * @type {ServerConfig}
@@ -199,7 +199,7 @@ Server.prototype.startServer = function (callback) {
             start.call(self, function (error, clientServer) {
                 clearInterval(interval);
 
-                callback && callback(error, clientServer);
+                callback && callback(error, clientServer, serverConfig.Endpoint);
             });
         }
     }, 100);
