@@ -15,8 +15,9 @@
 
 var http = require('http');
 var _ = require('underscore');
+var pathModule = require('path');
 
-var serverConfigJsonPath = './config/ServerConfig.json';
+var serverConfigJsonPath = pathModule.resolve('./config/ServerConfig.json');
 
 /**
  * @type {ServerConfig}
