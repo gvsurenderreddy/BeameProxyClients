@@ -1,6 +1,6 @@
 {
   "name": "beame-proxy-clients",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Collection of ProxyClients for Node.js",
   "main": "index.js",
   "scripts": {
