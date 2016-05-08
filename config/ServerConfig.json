@@ -1,6 +1,6 @@
 {
   "EndpointUid": "",
-  "ProxyHostName": "",
-  "Endpoint": "",
+  "ProxyHostName": "http://sslproxy-eu-central-1a-5.luckyqr.io",
+  "Endpoint": "vvz6f91p2ali6o7ufm89-52-29-254-28-v1.dev.beameio.net",
   "DefaultPort": 8080
 }

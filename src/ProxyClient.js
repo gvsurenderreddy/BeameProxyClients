@@ -17,8 +17,8 @@ var proxyUtils = new ProxyUtils();
  */
 
 /**
- * @param {String} hostname
- * @param {String} endpoint
+ * @param {String} hostname - server endpoint url
+ * @param {String} endpoint - SSL Proxy Server endpoint url
  * @param {String} targetHost
  * @param {Number} targetPort
  * @param {ProxyClientOptions} options
@@ -33,10 +33,14 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
     /** @member {Object} */
     this.clientSockets = {};
 
-    /** @member {String} */
+    /**
+     * SSL Proxy Server endpoint url
+     * @member {String} */
     this.endpoint = endpoint;
 
-    /** @member {String} */
+    /**
+     * server endpoint url
+     * @member {String} */
     this.hostname = hostname;
 
     /** @member {String} */
