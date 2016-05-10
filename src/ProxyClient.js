@@ -10,6 +10,7 @@ var io = require('socket.io-client');
 var ProxyUtils = require('beame-utils').ProxyUtils;
 var proxyUtils = new ProxyUtils();
 
+
 /**
  * @typedef {Object} ProxyClientOptions
  * @property {Function} [onConnect]
@@ -17,6 +18,7 @@ var proxyUtils = new ProxyUtils();
  */
 
 /**
+ * @param {String} serverType
  * @param {String} hostname - server endpoint url
  * @param {String} endpoint - SSL Proxy Server endpoint url
  * @param {String} targetHost
@@ -25,13 +27,15 @@ var proxyUtils = new ProxyUtils();
  * @constructor
  * @class
  */
-function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
+function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, options) {
 
     /** @member {Boolean} */
     this.connected = false;
 
     /** @member {Object} */
     this.clientSockets = {};
+
+    this.type = serverType;
 
     /**
      * SSL Proxy Server endpoint url
@@ -54,15 +58,18 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
     /**
      * Connect to ProxyServer
      */
-    this.socketio = io.connect(this.endpoint +'/control', {'force new connection': true});
+    this.socketio = io.connect(this.endpoint + '/control', {'force new connection': true});
 
-    this.socketio.on('connect',  _.bind(function () {
-        if(this.connected) {
+    this.socketio.on('connect', _.bind(function () {
+        if (this.connected) {
             return;
         }
         console.info("ProxyClient connected:{hostname, endpoint, targetHost, targetPort}", this.hostname, this.endpoint, this.targetHost, this.targetPort);
         this.connected = true;
-        proxyUtils.emitMessage(this.socketio, 'register_server', proxyUtils.formatMessage(null, {hostname: this.hostname}));
+        proxyUtils.emitMessage(this.socketio, 'register_server', proxyUtils.formatMessage(null, {
+            hostname: this.hostname,
+            type: this.type
+        }));
 
         options && options.onConnect && options.onConnect();
 
@@ -82,10 +89,10 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
     }, this));
 
 
-    this.socketio.on('data', _.bind(function(data) {
+    this.socketio.on('data', _.bind(function (data) {
         var socketId = data.socketId;
         var socket = this.clientSockets[socketId];
-        if(socket) {
+        if (socket) {
             socket.id = socketId;
             //check if connected
             process.nextTick(function () {
@@ -93,24 +100,24 @@ function ProxyClient(hostname, endpoint, targetHost, targetPort, options) {
             });
 
         }
-    },this));
+    }, this));
 
-    this.socketio.on('socket_error', _.bind(function(data) {
+    this.socketio.on('socket_error', _.bind(function (data) {
         this.deleteSocket(data.socketId);
     }, this));
 
-    this.socketio.on('_end', _.bind(function(data) {
+    this.socketio.on('_end', _.bind(function (data) {
         console.log("***************Killing the socket ");
-        if(!data || !data.socketId) {
+        if (!data || !data.socketId) {
             return;
         }
 
         this.deleteSocket(data.socketId);
     }, this));
 
-    this.socketio.on('disconnect', _.bind(function() {
+    this.socketio.on('disconnect', _.bind(function () {
         this.connected = false;
-        _.each(this.clientSockets, function(socket) {
+        _.each(this.clientSockets, function (socket) {
             socket.destroy();
             this.deleteSocket(socket.id);
         }, this);
@@ -122,7 +129,7 @@ ProxyClient.prototype.createLocalServerConnection = function (data, callback) {
         return;
     }
 
-    var serverSideSocketId  = data.socketId;
+    var serverSideSocketId = data.socketId;
 
     var client = new net.Socket();
     client.serverSideSocketId = serverSideSocketId;
@@ -160,7 +167,9 @@ ProxyClient.prototype.createLocalServerConnection = function (data, callback) {
             }
         }, this));
 
-    } catch (e) { console.error(JSON.stringify(e)) }
+    } catch (e) {
+        console.error(JSON.stringify(e))
+    }
 
     callback && callback(data);
 };
@@ -172,7 +181,7 @@ ProxyClient.prototype.destroy = function () {
     return this;
 };
 
-ProxyClient.prototype.deleteSocket = function(socketId) {
+ProxyClient.prototype.deleteSocket = function (socketId) {
     if (socketId && this.clientSockets[socketId]) {
         var obj = this.clientSockets[socketId];
         obj.end();

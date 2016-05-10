@@ -40,22 +40,22 @@ var certificateServices,
  * @param callback
  * @this {SecureServer}
  */
-var readCertificates = function(callback) {
-    certificateServices.readCertificates(serverConfig.Endpoint,_.bind(function(error,data) {
-        if(error){
-            console.error('read server Certificates',utils.stringify(error));
-            callback(error,null);
+var readCertificates = function (callback) {
+    certificateServices.readCertificates(serverConfig.Endpoint, _.bind(function (error, data) {
+        if (error) {
+            console.error('read server Certificates', utils.stringify(error));
+            callback(error, null);
             return;
         }
 
-        if(data){
+        if (data) {
             console.log('************************************************certificates read successfully');
             this.state = 'ready';
-            callback(null,data);
+            callback(null, data);
         }
 
 
-    },this));
+    }, this));
 };
 
 /**
@@ -64,17 +64,17 @@ var readCertificates = function(callback) {
  * @param callback
  * @this {SecureServer}
  */
-var updateConfigData = function (provEndpoint,callback) {
+var updateConfigData = function (provEndpoint, callback) {
 
-    if(!provEndpoint){
+    if (!provEndpoint) {
         console.error('!!!!!!!!!!!!!!!!Empty Endpoint received from API');
         callback && callback('Empty Endpoint received from API', null);
         return;
     }
 
-    serverConfig.ProxyHostName          = 'https://' + provEndpoint.hostname;
-    serverConfig.Endpoint               = provEndpoint.endpoint;
-    serverConfig.EndpointUid            = provEndpoint.uid;
+    serverConfig.ProxyHostName = 'https://' + provEndpoint.hostname;
+    serverConfig.Endpoint = provEndpoint.endpoint;
+    serverConfig.EndpointUid = provEndpoint.uid;
 
     updateConfigFile(callback);
 };
@@ -85,11 +85,11 @@ var updateConfigData = function (provEndpoint,callback) {
  * @this {SecureServer}
  */
 var updateConfigFile = function (callback) {
-    utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig),function (error) {
-        if(error){
-            callback && callback(error,null);
+    utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig), function (error) {
+        if (error) {
+            callback && callback(error, null);
         }
-        callback && callback(null,{});
+        callback && callback(null, {});
     });
 };
 
@@ -100,9 +100,9 @@ var updateConfigFile = function (callback) {
  * @param {Function} callback
  * @this {SecureServer}
  */
-var start = function(certs, callback){
-    console.log('------------------------Client Server starting on ',serverConfig.Endpoint, serverConfig.DefaultPort);
-    try{
+var start = function (certs, callback) {
+    console.log('------------------------Client Server starting on ', serverConfig.Endpoint, serverConfig.DefaultPort);
+    try {
         this.clientServer = https.createServer(certs, function (req, res) {
             console.log("Client Server on connect", req.headers);
             if (req.url.indexOf('index.html') >= 0) {
@@ -112,14 +112,14 @@ var start = function(certs, callback){
             }
         });
 
-        this.clientServer.listen(this.clientServerPort, _.bind(function() {
-            this.sslProxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
-        },this));
+        this.clientServer.listen(this.clientServerPort, _.bind(function () {
+            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
+        }, this));
 
-        callback  && callback(null, this.clientServer);
-    } catch(error) {
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED',utils.stringify(error));
-        callback  && callback(error, null);
+        callback && callback(null, this.clientServer);
+    } catch (error) {
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED', utils.stringify(error));
+        callback && callback(error, null);
     }
 
 };
@@ -134,13 +134,13 @@ var start = function(certs, callback){
  * @param data
  * @this {SecureServer}
  */
-var onCertificatesSaved = function(error,data) {
+var onCertificatesSaved = function (error, data) {
     if (data) {
         console.log('************************************************certificates saved successfully');
         this.state = 'ready';
         return;
     }
-    console.error('save certificates failed',error);
+    console.error('save certificates failed', error);
 };
 
 /**
@@ -149,13 +149,13 @@ var onCertificatesSaved = function(error,data) {
  * @param provEndpoint
  * @this {SecureServer}
  */
-var onCertificateReceived = function(error,provEndpoint) {
+var onCertificateReceived = function (error, provEndpoint) {
     if (error) {
-        console.error('on order pem error',utils.stringify(error));
+        console.error('on order pem error', utils.stringify(error));
         return;
     }
     //save received certificates
-    certificateServices.saveCertificates(provEndpoint.endpoint,provEndpoint.options,_.bind(onCertificatesSaved,this));
+    certificateServices.saveCertificates(provEndpoint.endpoint, provEndpoint.options, _.bind(onCertificatesSaved, this));
 };
 
 /**
@@ -164,9 +164,9 @@ var onCertificateReceived = function(error,provEndpoint) {
  * @param data
  * @this {SecureServer}
  */
-var onCsrCreated = function(error,data) {
+var onCsrCreated = function (error, data) {
     if (error) {
-        console.error('CSR creation error',error);
+        console.error('CSR creation error', error);
         return;
     }
 
@@ -176,7 +176,7 @@ var onCsrCreated = function(error,data) {
     }
 
     //order ssl certificate from provision
-    provisionApiServices.orderPem(data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived,this));
+    provisionApiServices.orderPem(data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived, this));
 };
 
 /**
@@ -185,24 +185,24 @@ var onCsrCreated = function(error,data) {
  * @param provEndpoint
  * @this {SecureServer}
  */
-var onEndpointReceived = function(error,provEndpoint){
+var onEndpointReceived = function (error, provEndpoint) {
 
-    console.log('on find endpoint',provEndpoint);
+    console.log('on find endpoint', provEndpoint);
 
-    if(error){
-        console.error('on find endpoint error',utils.stringify(error));
+    if (error) {
+        console.error('on find endpoint error', utils.stringify(error));
         return;
     }
 
     //update properties and save it to config json
-    updateConfigData(provEndpoint,_.bind(function(error) {
-        if(error) {
-            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER',utils.stringify(error));
+    updateConfigData(provEndpoint, _.bind(function (error) {
+        if (error) {
+            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER', utils.stringify(error));
             return;
         }
         //create certificate for received endpoint
-        certificateServices.createCSR(serverConfig.EndpointUid, serverConfig.Endpoint,_.bind(onCsrCreated,this));
-    },this));
+        certificateServices.createCSR(serverConfig.EndpointUid, serverConfig.Endpoint, _.bind(onCsrCreated, this));
+    }, this));
 
 };
 
@@ -222,11 +222,11 @@ function SecureServer(clientServerPort, settings) {
 
     self.proxyUtils = new ProxyUtils(settings, function (instanceData) {
         //set properties
-        self.config                 = self.proxyUtils.config;
-        self.availabilityZone       = (settings && settings.avlZone) || instanceData.avlZone;
-        self.state                  = 'init';
+        self.config = self.proxyUtils.config;
+        self.availabilityZone = (settings && settings.avlZone) || instanceData.avlZone;
+        self.state = 'init';
 
-        if(clientServerPort && clientServerPort != serverConfig.DefaultPort){
+        if (clientServerPort && clientServerPort != serverConfig.DefaultPort) {
             serverConfig.DefaultPort = clientServerPort;
             updateConfigFile(null);
         }
@@ -237,15 +237,15 @@ function SecureServer(clientServerPort, settings) {
         certificateServices = self.proxyUtils.getCertificateServiceInstance();
         provisionApiServices = self.proxyUtils.getProvisionApiServiceInstance();
 
-        var init = function(){
+        var init = function () {
             //*****************************************get available endpoint from provision**************************//
             self.host = null;
-            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint,function (error,data) {
-                if(data && data.endpoint){
+            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
+                if (data && data.endpoint) {
                     self.host = data.endpoint;
                     self.availabilityZone = data.zone;
 
-                    provisionApiServices.findEndpoint(self.host, self.availabilityZone, _.bind(onEndpointReceived,self));
+                    provisionApiServices.findEndpoint(self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
                 }
                 else {
                     console.log('!!!!!!!!!! Load Balancer: Instance not found');
@@ -254,12 +254,12 @@ function SecureServer(clientServerPort, settings) {
         };
 
         //check existing configuration
-        if(!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
+        if (!_.isEmpty(serverConfig.Endpoint) && !_.isEmpty(serverConfig.ProxyHostName)) {
 
             //*****************************************try read installed certificates**************************//
-            readCertificates.call(self, function(error) {
-                if(error) {
-                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!on read certificates',error);
+            readCertificates.call(self, function (error) {
+                if (error) {
+                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!on read certificates', error);
                     init();
                 }
             });
@@ -267,7 +267,6 @@ function SecureServer(clientServerPort, settings) {
         else {
             init();
         }
-
 
 
     });
@@ -293,16 +292,16 @@ SecureServer.prototype.isReady = function () {
  * in callback suppose to return created https server
  * @param {Function} callback
  */
-SecureServer.prototype.startServer = function(callback) {
+SecureServer.prototype.startServer = function (callback) {
 
     var self = this;
 
-    var interval = setInterval(function(){
-        if(self.isReady()){
-            readCertificates.call(self, function(error,options) {
-                if(error){
+    var interval = setInterval(function () {
+        if (self.isReady()) {
+            readCertificates.call(self, function (error, options) {
+                if (error) {
                     self.state = 'error';
-                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start',utils.stringify(error));
+                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start', utils.stringify(error));
                     return;
                 }
 
@@ -316,15 +315,15 @@ SecureServer.prototype.startServer = function(callback) {
 /**
  * destroy server
  */
-SecureServer.prototype.destroy = function(){
+SecureServer.prototype.destroy = function () {
     //destroy proxy
     this.sslProxyClient && this.sslProxyClient.destroy();
     this.sslProxyClient = null;
 
     //destroy server
-    this.clientServer.close(_.bind(function(){
+    this.clientServer.close(_.bind(function () {
         this.clientServer = null;
-    },this));
+    }, this));
 };
 
 //****************************Public services END****************************************//

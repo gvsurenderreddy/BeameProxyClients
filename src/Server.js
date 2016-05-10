@@ -80,7 +80,7 @@ var start = function (callback) {
         });
 
         this.clientServer.listen(this.clientServerPort, _.bind(function () {
-            this.proxyClient = new ProxyClient(serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
+            this.proxyClient = new ProxyClient("HTTP", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
         }, this));
 
         callback && callback(null, this.clientServer);
