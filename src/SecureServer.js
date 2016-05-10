@@ -240,7 +240,7 @@ function SecureServer(clientServerPort, settings) {
         var init = function(){
             //*****************************************get available endpoint from provision**************************//
             self.host = null;
-            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalanceEndpoint,function (error,data) {
+            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint,function (error,data) {
                 if(data && data.endpoint){
                     self.host = data.endpoint;
                     self.availabilityZone = data.zone;
