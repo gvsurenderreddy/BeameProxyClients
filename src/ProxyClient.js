@@ -27,7 +27,7 @@ var proxyUtils = new ProxyUtils();
  * @constructor
  * @class
  */
-function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, options) {
+function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, options, agent) {
 
     /** @member {Boolean} */
     this.connected = false;
@@ -58,7 +58,7 @@ function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, opt
     /**
      * Connect to ProxyServer
      */
-    this.socketio = io.connect(this.endpoint + '/control', {'force new connection': true});
+    this.socketio = io.connect(this.endpoint + '/control', {multiplex: true, agent: agent});
 
     this.socketio.on('connect', _.bind(function () {
         if (this.connected) {

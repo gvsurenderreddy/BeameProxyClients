@@ -80,7 +80,7 @@ var start = function (callback) {
         });
 
         this.clientServer.listen(this.clientServerPort, _.bind(function () {
-            this.proxyClient = new ProxyClient("HTTP", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
+            this.proxyClient = new ProxyClient("HTTP", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent);
         }, this));
 
         callback && callback(null, this.clientServer);
@@ -97,10 +97,13 @@ var start = function (callback) {
 /**
  * @param {Number} clientServerPort
  * @param {ProxyUtilsSettings} settings
+ * @param {HttpsProxyAgent} agent
  * @constructor
  */
-function Server(clientServerPort, settings) {
+function Server(clientServerPort, settings, agent) {
     var self = this;
+
+    this.agent = agent;
 
     self.proxyUtils = new ProxyUtils(settings, function () {
         //set properties

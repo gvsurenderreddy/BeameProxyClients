@@ -113,7 +113,7 @@ var start = function (certs, callback) {
         });
 
         this.clientServer.listen(this.clientServerPort, _.bind(function () {
-            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {});
+            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent);
         }, this));
 
         callback && callback(null, this.clientServer);
@@ -213,10 +213,13 @@ var onEndpointReceived = function (error, provEndpoint) {
 /**
  * @param {Number} clientServerPort
  * @param {ProxyUtilsSettings} settings
+ * @param {HttpsProxyAgent} agent
  * @constructor
  */
-function SecureServer(clientServerPort, settings) {
+function SecureServer(clientServerPort, settings, agent) {
     var self = this;
+
+    this.agent = agent;
 
     console.log('Enter to Client Server constructor');
 
