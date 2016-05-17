@@ -12,6 +12,10 @@ var proxyUtils = new ProxyUtils();
 
 
 /**
+ * @typedef {Object} HttpsProxyAgent
+ */
+
+/**
  * @typedef {Object} ProxyClientOptions
  * @property {Function} [onConnect]
  * @property {Function} [onLocalServerCreated]

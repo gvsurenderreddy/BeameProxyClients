@@ -213,7 +213,7 @@ var onEndpointReceived = function (error, provEndpoint) {
 /**
  * @param {Number} clientServerPort
  * @param {ProxyUtilsSettings} settings
- * @param {HttpsProxyAgent} agent
+ * @param {HttpsProxyAgent|null|undefined} [agent]
  * @constructor
  */
 function SecureServer(clientServerPort, settings, agent) {

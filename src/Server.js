@@ -97,7 +97,7 @@ var start = function (callback) {
 /**
  * @param {Number} clientServerPort
  * @param {ProxyUtilsSettings} settings
- * @param {HttpsProxyAgent} agent
+ * @param {HttpsProxyAgent|null|undefined} [agent]
  * @constructor
  */
 function Server(clientServerPort, settings, agent) {
