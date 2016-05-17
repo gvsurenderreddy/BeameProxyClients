@@ -58,7 +58,7 @@ function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, opt
     /**
      * Connect to ProxyServer
      */
-    this.socketio = io.connect(this.endpoint + '/control', {multiplex: true, agent: agent});
+    this.socketio = io.connect(this.endpoint + '/control', {multiplex: false, agent: agent});
 
     this.socketio.on('connect', _.bind(function () {
         if (this.connected) {
