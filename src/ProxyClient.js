@@ -28,6 +28,7 @@ var proxyUtils = new ProxyUtils();
  * @param {String} targetHost
  * @param {Number} targetPort
  * @param {ProxyClientOptions} options
+ * @param {HttpsProxyAgent|null|undefined} [agent]
  * @constructor
  * @class
  */
