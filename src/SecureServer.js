@@ -22,13 +22,11 @@ var serverConfigJsonPath = './config/SecureServerConfig.json';
  * @type {SecureServerConfig}
  */
 var serverConfig = require('../config/SecureServerConfig.json');
-
-
+var provisionSettings = require('../config/ProvApiSettings.json');
 var cert_settings = require('../config/AppCertSettings.json');
 
 var ProxyUtils = require('beame-utils').ProxyUtils;
 var utils = require('beame-utils').Utils;
-
 
 var ProxyClient = require('./ProxyClient');
 
@@ -38,18 +36,6 @@ var ProvApi = BeameEdgeServices.ProvApiService;
 var CertService = BeameEdgeServices.CertificateServices;
 
 var Server = require('@zglozman/luckynetwork').Server;
-
-
-var provisionRequestTypes = {
-    "RegisterHost": {
-        "name": "register edge",
-        "endpoint": "/api/client/register"
-    },
-    "GetCert": {
-        "name": "order cert",
-        "endpoint": "/api/client/getCert"
-    }
-};
 
 var
     /** @type {CertificateServices} */
@@ -203,7 +189,7 @@ var onCsrCreated = function (error, data) {
     }
 
     //order ssl certificate from provision
-    var apiUrl = self.provApiEndpoint + provisionRequestTypes.GetCert.endpoint;
+    var apiUrl = self.provApiEndpoint + provisionSettings.GetCert.endpoint;
     provisionApiServices.getCert(apiUrl, data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived, self));
 };
 
@@ -271,7 +257,7 @@ function SecureServer(clientServerPort, settings, agent) {
         provisionApiServices = new ProvApi(cert_settings);
 
 
-        var apiUrl = self.provApiEndpoint + provisionRequestTypes.RegisterHost.endpoint;
+        var apiUrl = self.provApiEndpoint + provisionSettings.RegisterHost.endpoint;
 
 
         var init = function () {
@@ -279,8 +265,13 @@ function SecureServer(clientServerPort, settings, agent) {
             self.host = null;
             self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
                 if (data && data.endpoint) {
-                    self.host = data.endpoint; //'edge.eu-central-1a-1.v1.beameio.net';
-                    self.availabilityZone = data.zone; //'eu-central-1a';//
+                    // main logic
+                    // self.host = data.endpoint;
+                    // self.availabilityZone = data.zone;
+
+                    // test method for local debug
+                    self.host = 'edge.eu-central-1a-1.v1.beameio.net';
+                    self.availabilityZone = 'eu-central-1a';//
 
                     provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
                 }

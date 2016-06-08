@@ -105,7 +105,7 @@ function Server(clientServerPort, settings, agent) {
 
     this.agent = agent;
 
-    self.proxyUtils = new ProxyUtils( function () {
+    self.proxyUtils = new ProxyUtils(function () {
         //set properties
         self.config = self.proxyUtils.config;
         self.state = 'init';

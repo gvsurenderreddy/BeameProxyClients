@@ -1,0 +1,10 @@
+{
+    "RegisterHost": {
+        "name": "register edge",
+        "endpoint": "/api/client/register"
+    },
+    "GetCert": {
+        "name": "order cert",
+        "endpoint": "/api/client/getCert"
+    }
+}
