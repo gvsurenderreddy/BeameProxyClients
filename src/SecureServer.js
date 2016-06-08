@@ -266,12 +266,12 @@ function SecureServer(clientServerPort, settings, agent) {
             self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
                 if (data && data.endpoint) {
                     // main logic
-                    // self.host = data.endpoint;
-                    // self.availabilityZone = data.zone;
+                    self.host = data.endpoint;
+                    self.availabilityZone = data.zone;
 
                     // test method for local debug
-                    self.host = 'edge.eu-central-1a-1.v1.beameio.net';
-                    self.availabilityZone = 'eu-central-1a';//
+                    // self.host = 'edge.eu-central-1a-1.v1.beameio.net';
+                    // self.availabilityZone = 'eu-central-1a';
 
                     provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
                 }
