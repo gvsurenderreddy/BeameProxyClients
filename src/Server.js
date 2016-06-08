@@ -96,7 +96,7 @@ var start = function (callback) {
 //**********************************CONSTRUCTOR************************************************//
 /**
  * @param {Number} clientServerPort
- * @param {ProxyUtilsSettings} settings
+ * @param {Object} settings
  * @param {HttpsProxyAgent|null|undefined} [agent]
  * @constructor
  */
@@ -105,7 +105,7 @@ function Server(clientServerPort, settings, agent) {
 
     this.agent = agent;
 
-    self.proxyUtils = new ProxyUtils(settings, function () {
+    self.proxyUtils = new ProxyUtils( function () {
         //set properties
         self.config = self.proxyUtils.config;
         self.state = 'init';

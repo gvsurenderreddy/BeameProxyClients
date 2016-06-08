@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/beameio/ProxyClients#readme",
   "dependencies": {
+    "@zglozman/luckynetwork": "git+ssh://git@github.com/beameio/LuckyNetwork.git",
+    "beame-edge-services": "git+ssh://git@github.com/beameio/BeameEdgeServices.git",
     "beame-utils": "git+ssh://git@github.com:beameio/BeameUtils.git",
     "node-uuid": "^1.4.7",
     "socket.io": "^1.4.6",

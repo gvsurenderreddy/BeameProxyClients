@@ -93,7 +93,6 @@ function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, opt
         console.log('hostRegistered', data);
     }, this));
 
-
     this.socketio.on('data', _.bind(function (data) {
         var socketId = data.socketId;
         var socket = this.clientSockets[socketId];

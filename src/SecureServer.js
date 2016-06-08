@@ -23,14 +23,40 @@ var serverConfigJsonPath = './config/SecureServerConfig.json';
  */
 var serverConfig = require('../config/SecureServerConfig.json');
 
+
+var cert_settings = require('../config/AppCertSettings.json');
+
 var ProxyUtils = require('beame-utils').ProxyUtils;
 var utils = require('beame-utils').Utils;
 
 
 var ProxyClient = require('./ProxyClient');
 
-var certificateServices,
+var BeameEdgeServices = require("beame-edge-services");
+
+var ProvApi = BeameEdgeServices.ProvApiService;
+var CertService = BeameEdgeServices.CertificateServices;
+
+var Server = require('@zglozman/luckynetwork').Server;
+
+
+var provisionRequestTypes = {
+    "RegisterHost": {
+        "name": "register edge",
+        "endpoint": "/api/client/register"
+    },
+    "GetCert": {
+        "name": "order cert",
+        "endpoint": "/api/client/getCert"
+    }
+};
+
+var
+    /** @type {CertificateServices} */
+    certificateServices,
+    /** @type {ProvApiService} */
     provisionApiServices;
+
 
 //****************************Private helpers START****************************************//
 
@@ -73,7 +99,7 @@ var updateConfigData = function (provEndpoint, callback) {
     }
 
     serverConfig.ProxyHostName = 'https://' + provEndpoint.hostname;
-    serverConfig.Endpoint = provEndpoint.endpoint;
+    serverConfig.Endpoint = provEndpoint.hostname;
     serverConfig.EndpointUid = provEndpoint.uid;
 
     updateConfigFile(callback);
@@ -165,6 +191,7 @@ var onCertificateReceived = function (error, provEndpoint) {
  * @this {SecureServer}
  */
 var onCsrCreated = function (error, data) {
+    var self = this;
     if (error) {
         console.error('CSR creation error', error);
         return;
@@ -176,7 +203,8 @@ var onCsrCreated = function (error, data) {
     }
 
     //order ssl certificate from provision
-    provisionApiServices.orderPem(data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived, this));
+    var apiUrl = self.provApiEndpoint + provisionRequestTypes.GetCert.endpoint;
+    provisionApiServices.getCert(apiUrl, data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived, self));
 };
 
 /**
@@ -187,10 +215,10 @@ var onCsrCreated = function (error, data) {
  */
 var onEndpointReceived = function (error, provEndpoint) {
 
-    console.log('on find endpoint', provEndpoint);
+    console.log('register host response', provEndpoint);
 
     if (error) {
-        console.error('on find endpoint error', utils.stringify(error));
+        console.error('register host error', utils.stringify(error));
         return;
     }
 
@@ -212,7 +240,7 @@ var onEndpointReceived = function (error, provEndpoint) {
 //**********************************CONSTRUCTOR************************************************//
 /**
  * @param {Number} clientServerPort
- * @param {ProxyUtilsSettings} settings
+ * @param {Object} settings
  * @param {HttpsProxyAgent|null|undefined} [agent]
  * @constructor
  */
@@ -223,10 +251,12 @@ function SecureServer(clientServerPort, settings, agent) {
 
     console.log('Enter to Client Server constructor');
 
-    self.proxyUtils = new ProxyUtils(settings, function (instanceData) {
+    self.proxyUtils = new ProxyUtils(function (instanceData) {
         //set properties
         self.config = self.proxyUtils.config;
         self.availabilityZone = (settings && settings.avlZone) || instanceData.avlZone;
+        self.provApiEndpoint = (self.settings && self.settings.provApiEndpoint) || self.config.ProvApiEndpoint;
+
         self.state = 'init';
 
         if (clientServerPort && clientServerPort != serverConfig.DefaultPort) {
@@ -237,18 +267,22 @@ function SecureServer(clientServerPort, settings, agent) {
         self.clientServerPort = serverConfig.DefaultPort;
 
         //init services
-        certificateServices = self.proxyUtils.getCertificateServiceInstance();
-        provisionApiServices = self.proxyUtils.getProvisionApiServiceInstance();
+        certificateServices = new CertService(self.config.CertRootPath);
+        provisionApiServices = new ProvApi(cert_settings);
+
+
+        var apiUrl = self.provApiEndpoint + provisionRequestTypes.RegisterHost.endpoint;
+
 
         var init = function () {
             //*****************************************get available endpoint from provision**************************//
             self.host = null;
             self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
                 if (data && data.endpoint) {
-                    self.host = data.endpoint;
-                    self.availabilityZone = data.zone;
+                    self.host = data.endpoint; //'edge.eu-central-1a-1.v1.beameio.net';
+                    self.availabilityZone = data.zone; //'eu-central-1a';//
 
-                    provisionApiServices.findEndpoint(self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
+                    provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
                 }
                 else {
                     console.log('!!!!!!!!!! Load Balancer: Instance not found');

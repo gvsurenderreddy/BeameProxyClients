@@ -1,0 +1,5 @@
+{
+    "appCertPath" : "./cert/app_edge/",
+    "x509Name"    : "x509_beame_proxy_client.pem",
+    "pkName"      : "pk_beame_proxy_client.pem"
+}

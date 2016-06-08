@@ -5,9 +5,8 @@
 var SecureServer = require('../src/SecureServer');
 
 var server = new SecureServer(null, {
-    provApiEndpoint: 'https://prov-staging.beame.io',
-    lb: "http://lb-lucky.luckyqr.io",
-    avlZone : "eu-central-1a"
+    lb: "http://lb.luckyqr.io",
+    avlZone : "eu-central-1b"
 });
 
 server.startServer(function (error, https) {
