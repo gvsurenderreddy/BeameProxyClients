@@ -26,7 +26,7 @@ var provisionSettings = require('../config/ProvApiSettings.json');
 var cert_settings = require('../config/AppCertSettings.json');
 
 var ProxyUtils = require('beame-utils').ProxyUtils;
-var utils = require('beame-utils').Utils;
+var beameUtils = require('beame-utils').Utils;
 
 var ProxyClient = require('./ProxyClient');
 
@@ -55,7 +55,7 @@ var
 var readCertificates = function (callback) {
     certificateServices.readCertificates(serverConfig.Endpoint, _.bind(function (error, data) {
         if (error) {
-            console.error('read server Certificates', utils.stringify(error));
+            console.error('read server Certificates', beameUtils.stringify(error));
             callback(error, null);
             return;
         }
@@ -97,7 +97,7 @@ var updateConfigData = function (provEndpoint, callback) {
  * @this {SecureServer}
  */
 var updateConfigFile = function (callback) {
-    utils.saveFile(serverConfigJsonPath, utils.stringify(serverConfig), function (error) {
+    beameUtils.saveFile(serverConfigJsonPath, beameUtils.stringify(serverConfig), function (error) {
         if (error) {
             callback && callback(error, null);
         }
@@ -130,7 +130,7 @@ var start = function (certs, callback) {
 
         callback && callback(null, this.clientServer);
     } catch (error) {
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED', utils.stringify(error));
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!! START CLIENT SERVER FAILED', beameUtils.stringify(error));
         callback && callback(error, null);
     }
 
@@ -163,7 +163,7 @@ var onCertificatesSaved = function (error, data) {
  */
 var onCertificateReceived = function (error, provEndpoint) {
     if (error) {
-        console.error('on order pem error', utils.stringify(error));
+        console.error('on order pem error', beameUtils.stringify(error));
         return;
     }
     //save received certificates
@@ -189,7 +189,7 @@ var onCsrCreated = function (error, data) {
     }
 
     //order ssl certificate from provision
-    var apiUrl = self.provApiEndpoint + provisionSettings.GetCert.endpoint;
+    var apiUrl = self.provApiEndpoint + provisionSettings.Actions.GetCert.endpoint;
     provisionApiServices.getCert(apiUrl, data.uid, data.endpoint, data.privateKey, data.csr, _.bind(onCertificateReceived, self));
 };
 
@@ -204,14 +204,14 @@ var onEndpointReceived = function (error, provEndpoint) {
     console.log('register host response', provEndpoint);
 
     if (error) {
-        console.error('register host error', utils.stringify(error));
+        console.error('register host error', beameUtils.stringify(error));
         return;
     }
 
     //update properties and save it to config json
     updateConfigData(provEndpoint, _.bind(function (error) {
         if (error) {
-            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER', utils.stringify(error));
+            console.error('!!!!!!!!!!!!!!!!!Update Config json failed on CLIENT SERVER', beameUtils.stringify(error));
             return;
         }
         //create certificate for received endpoint
@@ -241,7 +241,8 @@ function SecureServer(clientServerPort, settings, agent) {
         //set properties
         self.config = self.proxyUtils.config;
         self.availabilityZone = (settings && settings.avlZone) || instanceData.avlZone;
-        self.provApiEndpoint = (self.settings && self.settings.provApiEndpoint) || self.config.ProvApiEndpoint;
+        
+        self.provApiEndpoint = beameUtils.isAmazon() ? provisionSettings.Endpoints.Online : provisionSettings.Endpoints.Local;
 
         self.state = 'init';
 
@@ -257,7 +258,7 @@ function SecureServer(clientServerPort, settings, agent) {
         provisionApiServices = new ProvApi(cert_settings);
 
 
-        var apiUrl = self.provApiEndpoint + provisionSettings.RegisterHost.endpoint;
+        var apiUrl = self.provApiEndpoint + provisionSettings.Actions.RegisterHost.endpoint;
 
 
         var init = function () {
@@ -329,7 +330,7 @@ SecureServer.prototype.startServer = function (callback) {
             readCertificates.call(self, function (error, options) {
                 if (error) {
                     self.state = 'error';
-                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start', utils.stringify(error));
+                    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!read certificates failed on start', beameUtils.stringify(error));
                     return;
                 }
 

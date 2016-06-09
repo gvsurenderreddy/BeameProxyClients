@@ -1,10 +1,18 @@
 {
-    "RegisterHost": {
-        "name": "register edge",
-        "endpoint": "/api/client/register"
+
+    "Endpoints" : {
+        "Local" : "https://zenit.office.beameio.net",
+        "Online" : "https://prov-staging.beameio.net"
     },
-    "GetCert": {
-        "name": "order cert",
-        "endpoint": "/api/client/getCert"
+
+    "Actions" : {
+        "RegisterHost": {
+            "name": "register edge",
+            "endpoint": "/api/client/register"
+        },
+        "GetCert": {
+            "name": "order cert",
+            "endpoint": "/api/client/getCert"
+        }
     }
 }
