@@ -132,7 +132,7 @@ var start = function (certs, callback) {
         });
 
         this.clientServer.listen(this.clientServerPort, _.bind(function () {
-            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent,certs);
+            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent, certs);
         }, this));
 
         callback && callback(null, this.clientServer);
@@ -269,24 +269,32 @@ function SecureServer(clientServerPort, settings, agent) {
 
 
         var init = function () {
-            //*****************************************get available endpoint from provision**************************//
-            self.host = null;
-            self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
-                if (data && data.endpoint) {
-                    // main logic
-                    self.host = data.endpoint;
-                    self.availabilityZone = data.zone;
+            if (settings && settings.edgeServerHostname) {
+                self.host = settings.edgeServerHostname;
 
-                    // test method for local debug
-                    self.host = 'edge.us-east-1b-1.v1.beameio.net';
-                    self.availabilityZone = 'us-east-1b';
+                provisionApiServices.registerHost(apiUrl, self.host, null, _.bind(onEndpointReceived, self));
+            }
+            else {
+                //*****************************************get available endpoint from provision**************************//
+                self.host = null;
+                self.proxyUtils.selectBestProxy((settings && settings.lb) || self.config.LoadBalancerEndpoint, function (error, data) {
+                    if (data && data.endpoint) {
+                        // main logic
+                        self.host = data.endpoint;
+                        self.availabilityZone = data.zone;
 
-                    provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
-                }
-                else {
-                    console.log('!!!!!!!!!! Load Balancer: Instance not found');
-                }
-            });
+                        // test method for local debug
+                        // self.host = 'edge.us-east-1b-1.v1.beameio.net';
+                        // self.availabilityZone = 'us-east-1b';
+
+                        provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
+                    }
+                    else {
+                        console.log('!!!!!!!!!! Load Balancer: Instance not found');
+                    }
+                });
+            }
+
         };
 
         //check existing configuration

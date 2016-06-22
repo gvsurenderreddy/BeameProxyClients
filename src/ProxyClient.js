@@ -46,7 +46,7 @@ function ProxyClient(serverType, edgeClientHostname, edgeServerHostname, targetH
     /**
      * SSL Proxy Server endpoint url
      * @member {String} */
-    this.edgeServerHostname = edgeServerHostname + ':8443';
+    this.edgeServerHostname = edgeServerHostname;// + ':8443';
 
     /**
      * server endpoint url
@@ -69,6 +69,7 @@ function ProxyClient(serverType, edgeClientHostname, edgeServerHostname, targetH
 
     if(edgeClientCerts){
         io_options.cert = edgeClientCerts.cert;
+        io_options.key = edgeClientCerts.key;
         io_options.key = edgeClientCerts.key;
 
     }
