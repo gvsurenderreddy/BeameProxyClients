@@ -13,6 +13,13 @@
  */
 
 
+/**
+ * @typedef {Object} EdgeClientResponse
+ * @property {String} uid
+ * @property {String} hostname
+ * @property {String} edgeHostname
+ */
+
 var https = require('https');
 var _ = require('underscore');
 
@@ -72,7 +79,7 @@ var readCertificates = function (callback) {
 
 /**
  * Update config file
- * @param provEndpoint
+ * @param {EdgeClientResponse} provEndpoint
  * @param callback
  * @this {SecureServer}
  */
@@ -84,7 +91,7 @@ var updateConfigData = function (provEndpoint, callback) {
         return;
     }
 
-    serverConfig.ProxyHostName = 'https://' + provEndpoint.hostname;
+    serverConfig.ProxyHostName = 'https://' + provEndpoint.edgeHostname;
     serverConfig.Endpoint = provEndpoint.hostname;
     serverConfig.EndpointUid = provEndpoint.uid;
 
@@ -108,7 +115,7 @@ var updateConfigFile = function (callback) {
 /**
  * START SEVER FROM HERE
  * certs => certificates options
- * @param {Object} certs
+ * @param {ServerCertificates} certs
  * @param {Function} callback
  * @this {SecureServer}
  */
@@ -125,7 +132,7 @@ var start = function (certs, callback) {
         });
 
         this.clientServer.listen(this.clientServerPort, _.bind(function () {
-            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent);
+            this.sslProxyClient = new ProxyClient("HTTPS", serverConfig.Endpoint, serverConfig.ProxyHostName, 'localhost', serverConfig.DefaultPort, {}, this.agent,certs);
         }, this));
 
         callback && callback(null, this.clientServer);
@@ -241,7 +248,7 @@ function SecureServer(clientServerPort, settings, agent) {
         //set properties
         self.config = self.proxyUtils.config;
         self.availabilityZone = (settings && settings.avlZone) || instanceData.avlZone;
-        
+
         self.provApiEndpoint = beameUtils.isAmazon() ? provisionSettings.Endpoints.Online : provisionSettings.Endpoints.Local;
 
         self.state = 'init';
@@ -271,8 +278,8 @@ function SecureServer(clientServerPort, settings, agent) {
                     self.availabilityZone = data.zone;
 
                     // test method for local debug
-                    // self.host = 'edge.eu-central-1a-1.v1.beameio.net';
-                    // self.availabilityZone = 'eu-central-1a';
+                    self.host = 'edge.us-east-1b-1.v1.beameio.net';
+                    self.availabilityZone = 'us-east-1b';
 
                     provisionApiServices.registerHost(apiUrl, self.host, self.availabilityZone, _.bind(onEndpointReceived, self));
                 }

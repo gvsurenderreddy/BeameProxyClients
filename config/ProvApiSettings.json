@@ -8,11 +8,11 @@
     "Actions" : {
         "RegisterHost": {
             "name": "register edge",
-            "endpoint": "/api/client/register"
+            "endpoint": "/api/v1/client/register"
         },
         "GetCert": {
             "name": "order cert",
-            "endpoint": "/api/client/getCert"
+            "endpoint": "/api/v1/client/getCert"
         }
     }
 }

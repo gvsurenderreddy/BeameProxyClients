@@ -23,16 +23,17 @@ var proxyUtils = new ProxyUtils();
 
 /**
  * @param {String} serverType
- * @param {String} hostname - server endpoint url
- * @param {String} endpoint - SSL Proxy Server endpoint url
+ * @param {String} edgeClientHostname - server endpoint url
+ * @param {String} edgeServerHostname - SSL Proxy Server endpoint url
  * @param {String} targetHost
  * @param {Number} targetPort
  * @param {ProxyClientOptions} options
  * @param {HttpsProxyAgent|null|undefined} [agent]
+ * @param {ServerCertificates} edgeClientCerts
  * @constructor
  * @class
  */
-function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, options, agent) {
+function ProxyClient(serverType, edgeClientHostname, edgeServerHostname, targetHost, targetPort, options, agent, edgeClientCerts) {
 
     /** @member {Boolean} */
     this.connected = false;
@@ -45,12 +46,12 @@ function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, opt
     /**
      * SSL Proxy Server endpoint url
      * @member {String} */
-    this.endpoint = endpoint;
+    this.edgeServerHostname = edgeServerHostname + ':8443';
 
     /**
      * server endpoint url
      * @member {String} */
-    this.hostname = hostname;
+    this.hostname = edgeClientHostname;
 
     /** @member {String} */
     this.targetHost = targetHost;
@@ -58,18 +59,27 @@ function ProxyClient(serverType, hostname, endpoint, targetHost, targetPort, opt
     /** @member {Number} */
     this.targetPort = targetPort;
 
-    console.info("ProxyClient connecting to " + this.endpoint);
+    console.info("ProxyClient connecting to " + this.edgeServerHostname);
 
     /**
      * Connect to ProxyServer
      */
-    this.socketio = io.connect(this.endpoint + '/control', {multiplex: false, agent: agent});
+
+    var io_options =  {multiplex: false, agent: agent};
+
+    if(edgeClientCerts){
+        io_options.cert = edgeClientCerts.cert;
+        io_options.key = edgeClientCerts.key;
+
+    }
+
+    this.socketio = io.connect(this.edgeServerHostname + '/control',io_options);
 
     this.socketio.on('connect', _.bind(function () {
         if (this.connected) {
             return;
         }
-        console.info("ProxyClient connected:{hostname, endpoint, targetHost, targetPort}", this.hostname, this.endpoint, this.targetHost, this.targetPort);
+        console.info("ProxyClient connected:{hostname, endpoint, targetHost, targetPort}", this.hostname, this.edgeServerHostname, this.targetHost, this.targetPort);
         this.connected = true;
         proxyUtils.emitMessage(this.socketio, 'register_server', proxyUtils.formatMessage(null, {
             hostname: this.hostname,
