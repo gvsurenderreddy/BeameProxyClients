@@ -1,6 +1,6 @@
 {
-  "EndpointUid": "b58ce286-7546-42f2-9a6a-4dfbbf447aad",
-  "ProxyHostName": "https://edge.us-east-1b-1.v1.beameio.net",
+  "EndpointUid": "668a7013-eb54-46ce-8017-d84852a38545",
+  "ProxyHostName": "https://edge.eu-central-1a-1.v1.beameio.net",
   "DefaultPort": 8888,
-  "Endpoint": "dbb0t970szpq7uz8.v1.r.d.edge.us-east-1b-1.v1.beameio.net"
+  "Endpoint": "k59jr853aqvts56z.v1.r.d.edge.eu-central-1a-1.v1.beameio.net"
 }
